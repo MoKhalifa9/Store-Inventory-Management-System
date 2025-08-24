@@ -14,7 +14,7 @@ impl Transactions {
         Transactions { sales: Vec::new() }
     }
 
-    pub fn record_sale(&mut self, product_name: &str, quantity: u32, unit_price: f64) {
+    pub fn record_sale(&mut self, product_name: String, quantity: u32, unit_price: f64) {
         let total_price = quantity as f64 * unit_price;
         let sale = Sales {
             product_name,
