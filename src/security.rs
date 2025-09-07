@@ -113,22 +113,3 @@ pub fn change_password(current_user: &User) {
     save_users(&users);
     println!("Password changed!");
 }
-
-pub fn require_login() -> bool {
-    loop {
-        println!("\n== Welcome ==");
-        println!("1) Log in");
-        println!("2) Sign up (Client)");
-        println!("0) Exit");
-        print!("> "); let _ = io::stdout().flush();
-
-        let mut s = String::new();
-        if io::stdin().read_line(&mut s).is_err() { return false; }
-        match s.trim() {
-            "1" => { return login().is_some(); }
-            "2" => signup(),
-            "0" => return false,
-            _ => println!("Invalid choice."),
-        }
-    }
-}
