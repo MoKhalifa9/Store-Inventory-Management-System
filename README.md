@@ -44,6 +44,10 @@ This project was built for learning purposes.
 ## 🚀 Getting Started
 ### Pre-Requisites
   - Install [Rust](https://www.rust-lang.org/tools/install)
+### Clone The Repository
+```bash
+git clone https://github.com/MoKhalifa9/Store-Inventory-Management-System.git
+```
 ### Build & Run
 ```bash
 cargo build
