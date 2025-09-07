@@ -32,7 +32,7 @@ fn role_to_str(r: &Role) -> &'static str {
 }
 
 fn load_users() -> Vec<User> {
-    let path = "users.txt";
+    let path = "Users.txt";
     if !std::path::Path::new(path).exists() {
         let _ = fs::write(path, "admin,secret,Admin\n");
     }
@@ -59,7 +59,7 @@ fn save_users(users: &[User]) {
     for u in users {
         data.push_str(&format!("{},{},{}\n", u.username, u.password, role_to_str(&u.role)));
     }
-    let _ = fs::write("users.txt", data);
+    let _ = fs::write("Users.txt", data);
 }
 
 fn prompt(label: &str) -> String {

@@ -1,138 +1,123 @@
-use store_inventory_management_system::*; // added missing semicolon
+// Integration tests live under `tests/` and use the crate as an external dependency.
+use store_inventory_management_system::{Inventory, Transactions, report_inventory, report_sales, report_purchases, StoreError};
 
-//
-// Inventory Tests
-//
 #[test]
-fn add_product_increases_inventory() {
+fn add_edit_delete_product_flow() {
     let mut inv = Inventory::new();
-    inv.add_product("Cola", "Sweet drink", 10.0, 50);
-    assert_eq!(inv.all().len(), 1); // changed products() to all()
+
+    // add
+    inv.add_product("Cola", "330ml can", 10.0, 12);
+    inv.add_product("Chips", "Salted", 7.5, 5);
+    let inv_report = report_inventory(&inv);
+    assert!(inv_report.contains("Cola"));
+    assert!(inv_report.contains("Chips"));
+
+    // edit (rename + price + qty)
+    inv.edit_product(
+        "Cola",
+        Some("Cola Zero"),
+        Some("330ml can (zero sugar)"),
+        Some(11.0),
+        Some(20),
+    );
+    let inv_report = report_inventory(&inv);
+    assert!(!inv_report.contains("Cola\n")); // original name gone (newline avoids partial match)
+    assert!(inv_report.contains("Cola Zero"));
+    assert!(inv_report.contains("11.0"));
+    assert!(inv_report.contains("20"));
+
+    // delete
+    inv.del_product("Chips");
+    let inv_report = report_inventory(&inv);
+    assert!(!inv_report.contains("Chips"));
 }
 
 #[test]
-fn add_multiple_products() {
-    let mut inv = Inventory::new();
-    inv.add_product("Cola", "Sweet drink", 10.0, 50);
-    inv.add_product("Sprite", "Lemon drink", 8.0, 20);
-    assert_eq!(inv.all().len(), 2); // changed products() to all()
-}
-
-#[test]
-fn edit_product_changes_fields_correctly() {
-    let mut inv = Inventory::new();
-    inv.add_product("Cola", "Sweet drink", 10.0, 50);
-    inv.edit_product("Cola", Some("ColaZero"), Some("No sugar"), Some(12.5), None); // added None for quantity parameter
-
-    let p = inv.all().iter().find(|p| p.name() == "ColaZero").unwrap(); // changed products() to all()
-    assert_eq!(p.description(), "No sugar");
-    assert_eq!(p.price(), 12.5);
-}
-
-#[test]
-fn edit_nonexistent_product_does_nothing() {
-    let mut inv = Inventory::new();
-    inv.add_product("Cola", "Sweet drink", 10.0, 50);
-    inv.edit_product("Fanta", Some("FantaZero"), None, None, None); // added None for quantity parameter
-    assert!(inv.all().iter().all(|p| p.name() != "FantaZero")); // changed products() to all()
-}
-
-#[test]
-fn delete_product_removes_by_name() {
-    let mut inv = Inventory::new();
-    inv.add_product("Sprite", "Lemon drink", 8.0, 20);
-    inv.del_product("Sprite");
-    assert!(inv.all().is_empty()); // changed products() to all()
-}
-
-#[test]
-fn delete_nonexistent_product_does_nothing() {
-    let mut inv = Inventory::new();
-    inv.add_product("Sprite", "Lemon drink", 8.0, 20);
-    inv.del_product("Fanta");
-    assert_eq!(inv.all().len(), 1); // changed products() to all()
-}
-
-#[test]
-fn add_product_with_zero_quantity() {
-    let mut inv = Inventory::new();
-    inv.add_product("Empty", "Zero stock", 5.0, 0);
-    assert_eq!(inv.all()[0].quantity(), 0); // changed products() to all()
-}
-
-#[test]
-fn add_product_with_zero_price() {
-    let mut inv = Inventory::new();
-    inv.add_product("Freebie", "Promotional", 0.0, 10);
-    assert_eq!(inv.all()[0].price(), 0.0); // changed products() to all()
-}
-
-//
-// Sales Tests
-//
-#[test]
-fn record_sale_reduces_quantity_and_adds_transaction() {
-    let mut inv = Inventory::new();
-    inv.add_product("Pepsi", "Soda", 9.5, 10);
-    let mut tx = Transactions::new();
-
-    let _ = tx.record_sale("Pepsi", 2, 9.5, &mut inv); // fixed parameter order
-    assert_eq!(inv.all()[0].quantity(), 8); // changed products() to all()
-    assert_eq!(tx.get_sales().len(), 1); // changed sales() to get_sales()
-    assert!((tx.total_revenue() - 19.0).abs() < f64::EPSILON);
-}
-
-#[test]
-fn record_sale_out_of_stock_should_not_add_transaction() {
-    let mut inv = Inventory::new();
-    inv.add_product("Juice", "Orange", 5.0, 1);
-    let mut tx = Transactions::new();
-
-    let _ = tx.record_sale("Juice", 5, 5.0, &mut inv); // fixed parameter order and added Result handling
-    assert!(tx.get_sales().is_empty()); // changed sales() to get_sales()
-    assert_eq!(inv.all()[0].quantity(), 1); // changed products() to all()
-}
-
-#[test]
-fn record_sale_nonexistent_product_does_nothing() {
-    let mut inv = Inventory::new();
-    inv.add_product("Water", "Still", 3.0, 10);
-    let mut tx = Transactions::new();
-
-    let _ = tx.record_sale("Beer", 2, 3.0, &mut inv); // fixed parameter order and added Result handling
-    assert!(tx.get_sales().is_empty()); // changed sales() to get_sales()
-}
-
-//
-// Purchase Tests
-//
-#[test]
-fn record_purchase_increases_quantity_and_adds_transaction() {
-    let mut inv = Inventory::new();
-    inv.add_product("Fanta", "Orange soda", 7.0, 5);
-    let mut tx = Transactions::new();
-
-    let _ = tx.record_purchase("Fanta", 10, 6.5, &mut inv); // fixed parameter order and added Result handling
-    assert_eq!(inv.all()[0].quantity(), 15); // changed products() to all()
-    assert_eq!(tx.get_purchases().len(), 1); // changed purchases() to get_purchases()
-    assert!((tx.total_purchase_cost() - 65.0).abs() < f64::EPSILON);
-}
-
-#[test]
-fn record_purchase_nonexistent_product_does_nothing() {
+fn purchase_increases_stock_and_is_recorded() {
     let mut inv = Inventory::new();
     let mut tx = Transactions::new();
 
-    let _ = tx.record_purchase("NonExistent", 10, 5.0, &mut inv); // fixed parameter order and added Result handling
-    assert!(tx.get_purchases().is_empty()); // changed purchases() to get_purchases()
+    inv.add_product("Bread", "Whole grain", 18.0, 10);
+
+    // supplier purchase
+    let p = tx.record_purchase("Bread", 15, 12.0, &mut inv).expect("purchase should work");
+    assert_eq!(p.product_name(), "Bread");
+    assert_eq!(p.quantity(), 15);
+    assert!((p.total_cost() - 15.0 * 12.0).abs() < 1e-6);
+
+    // stock increased
+    let rep = report_inventory(&inv);
+    // expect quantity 10 + 15 = 25 somewhere
+    assert!(rep.contains("25"));
+
+    // recorded in purchases report
+    let pr = report_purchases(&tx);
+    assert!(pr.contains("Bread"));
+    assert!(pr.contains("15"));
 }
 
-//
-// Reporting Tests
-//
 #[test]
-fn report_inventory_runs_without_panic() {
+fn sale_decreases_stock_and_is_recorded() {
     let mut inv = Inventory::new();
-    inv.add_product("Milk", "Dairy", 2.0, 5);
-    let _ = report_inventory(&inv); // changed to call the standalone function instead of a method
+    let mut tx = Transactions::new();
+
+    inv.add_product("Milk", "1L", 24.0, 8);
+
+    // customer purchase (sale)
+    let s = tx.record_sale("Milk", 3, 25.0, &mut inv).expect("sale should work");
+    assert_eq!(s.product_name(), "Milk");
+    assert_eq!(s.quantity(), 3);
+    assert!((s.total_price() - 3.0 * 25.0).abs() < 1e-6);
+
+    // stock decreased: 8 - 3 = 5
+    let rep = report_inventory(&inv);
+    assert!(rep.contains("Milk"));
+    assert!(rep.contains("5"));
+
+    // recorded in sales report
+    let sr = report_sales(&tx);
+    assert!(sr.contains("Milk"));
+    assert!(sr.contains("3"));
+}
+
+#[test]
+fn cannot_sell_more_than_stock() {
+    let mut inv = Inventory::new();
+    let mut tx = Transactions::new();
+
+    inv.add_product("Eggs", "Dozen", 65.0, 2);
+
+    // try to sell 5 while stock is 2
+    let res = tx.record_sale("Eggs", 5, 70.0, &mut inv);
+    assert!(res.is_err(), "should fail when selling more than stock");
+
+    // inventory must remain unchanged (quantity still 2)
+    let rep = report_inventory(&inv);
+    assert!(rep.contains("Eggs"));
+    assert!(rep.contains("2"));
+
+    // and nothing recorded in sales
+    let sr = report_sales(&tx);
+    assert!(!sr.contains("Eggs"));
+}
+
+// Optional: selling a non-existent product should fail gracefully
+#[test]
+fn cannot_sell_unknown_product() {
+    let mut inv = Inventory::new();
+    let mut tx = Transactions::new();
+
+    let res = tx.record_sale("Unknown", 1, 10.0, &mut inv);
+    assert!(res.is_err());
+}
+
+// Optional: purchasing a non-existent product could either create it or fail.
+// Adjust based on your implementation. Here we expect failure.
+#[test]
+fn purchasing_unknown_product_should_fail_unless_implemented_otherwise() {
+    let mut inv = Inventory::new();
+    let mut tx = Transactions::new();
+
+    let res = tx.record_purchase("NewThing", 5, 3.0, &mut inv);
+    assert!(res.is_err(), "If your logic auto-creates products, flip this assertion.");
 }

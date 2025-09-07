@@ -30,6 +30,7 @@ This project was built for learning purposes.
 ## 📂 Project Structure
 ```text
 .
+├── Users.txt
 ├── Cargo.toml
 ├── src/
 │ ├── lib.rs # Module exports
@@ -38,7 +39,7 @@ This project was built for learning purposes.
 │ ├── transactions.rs # Sales & purchase logic
 │ └── security.rs # Authentication
 └── tests/
-└── tests.rs # Integration tests
+│ └── tests.rs # Integration tests
 ```
 
 ## 🚀 Getting Started
