@@ -19,16 +19,34 @@ impl Product {
     }
 
     // ---- GETTERS ----
-    pub fn name(&self) -> &str { &self.name }
-    pub fn description(&self) -> &str { &self.description }
-    pub fn price(&self) -> f64 { self.price }
-    pub fn quantity(&self) -> u32 { self.quantity }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+    pub fn price(&self) -> f64 {
+        self.price
+    }
+    pub fn quantity(&self) -> u32 {
+        self.quantity
+    }
 
     // ---- SETTERS ----
-    pub fn set_description(&mut self, description: &str) { self.description = description.to_string();}
-    pub fn set_price(&mut self, price: f64) { if price >= 0.0 { self.price = price; } }
-    pub fn set_quantity(&mut self, quantity: u32) { self.quantity = quantity;}
-    pub fn add_stock(&mut self, qty: u32) { self.quantity += qty;}
+    pub fn set_description(&mut self, description: &str) {
+        self.description = description.to_string();
+    }
+    pub fn set_price(&mut self, price: f64) {
+        if price >= 0.0 {
+            self.price = price;
+        }
+    }
+    pub fn set_quantity(&mut self, quantity: u32) {
+        self.quantity = quantity;
+    }
+    pub fn add_stock(&mut self, qty: u32) {
+        self.quantity += qty;
+    }
     pub fn remove_stock(&mut self, qty: u32) {
         if self.quantity >= qty {
             self.quantity -= qty;
@@ -44,15 +62,11 @@ pub struct Inventory {
 
 impl Inventory {
     pub fn new() -> Self {
-        Inventory { products: Vec::new() }
+        Inventory {
+            products: Vec::new(),
+        }
     }
-    pub fn add_product(
-        &mut self,
-        name: &str,
-        description: &str,
-        price: f64,
-        quantity: u32,
-    ) {
+    pub fn add_product(&mut self, name: &str, description: &str, price: f64, quantity: u32) {
         let product = Product {
             name: name.to_string(),
             description: description.to_string(),
@@ -64,23 +78,31 @@ impl Inventory {
 
     pub fn edit_product(
         &mut self,
-        index: usize,
-        name: Option<String>,
-        description: Option<String>,
+        current_name: &str,
+        name: Option<&str>,
+        description: Option<&str>,
         price: Option<f64>,
         quantity: Option<u32>,
     ) {
-        if let Some(product) = self.products.get_mut(index) {
-            if let Some(name) = name { product.name = name;}
-            if let Some(description) = description { product.description = description;}
-            if let Some(price) = price { product.price = price; }
-            if let Some(quantity) = quantity { product.quantity = quantity; }
+        if let Some(product) = self.find_mut(current_name) {
+            if let Some(name) = name {
+                product.name = name.to_string();
+            }
+            if let Some(description) = description {
+                product.description = description.to_string();
+            }
+            if let Some(price) = price {
+                product.price = price;
+            }
+            if let Some(quantity) = quantity {
+                product.quantity = quantity;
+            }
         }
     }
 
-    pub fn del_product(&mut self, index: usize) {
-        if index < self.products.len() {
-            self.products.remove(index);
+    pub fn del_product(&mut self, name: &str) {
+        if let Some(pos) = self.products.iter().position(|p| p.name() == name) {
+            self.products.remove(pos);
         }
     }
 

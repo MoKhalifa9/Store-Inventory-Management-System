@@ -124,6 +124,14 @@ impl Transactions {
     pub fn get_purchases(&self) -> &[Purchase] {
         &self.purchases
     }
+
+    pub fn total_revenue(&self) -> f64 {
+        self.sales.iter().map(|s| s.total_price).sum()
+    }
+
+    pub fn total_purchase_cost(&self) -> f64 {
+        self.purchases.iter().map(|p| p.total_cost).sum()
+    }
 }
 
 pub fn report_sales(tx: &Transactions) -> String {
