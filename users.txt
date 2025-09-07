@@ -1,2 +1,1 @@
-admin,admin2,Admin
-manager,manager,Manager
+admin,secret,Admin
