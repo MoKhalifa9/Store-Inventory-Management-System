@@ -150,7 +150,7 @@ Username: admin
 Password: secret
 Logged in as Admin.
 
-== Manager Menu ==
+== Admin Menu ==
 1) View products
 2) Add product
 3) Edit product
